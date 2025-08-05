@@ -18,11 +18,10 @@ class BaseLLM(ABC):
             api_key (str): api key 
             model (str): model name
         """
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
-        self.model = model
+        pass
     
     @abstractmethod
-    def get_response_and_important_message(self):
+    def get_response(self):
         """
         Calling LLM for response and deciding message important or not
         
@@ -32,14 +31,14 @@ class BaseLLM(ABC):
         
         pass
     
-    @abstractmethod 
-    def parse_response(self, message):
-        """
-        Split the response into 2 parts: llm response and json text containing "is important"
-        Args:
+    @abstractmethod
+    def important_response(self, message):
+        """ 
+        Call LLM with important prompt and parse
+        
+        Args: 
             message(str): message from user
         Returns:
-            llm_response(str): answer from llm
-            is_important(bool): deciding whether the message is important or not
+            Response from llm answering important prompt
         """
         pass

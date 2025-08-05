@@ -2,7 +2,8 @@
 from google import genai
 from google.genai import types
 from src.core.llm.llm_base import BaseLLM
-import json
+import os
+from src.core.llm.prompts.important_task import generate_important_prompt, parse_important_response
 
 class InvalidAPIKeyError(Exception):
     pass
@@ -13,6 +14,8 @@ class GeminiAPIError(Exception):
 class GeminiService(BaseLLM):
     def __init__(self, api_key=None, model="gemini-2.0-flash"):
         super().__init__(api_key, model)
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        self.model = model
         if not self.api_key or not self.api_key.strip():
             raise InvalidAPIKeyError("Set api key in .env file of pass an valid api key")
         
@@ -30,37 +33,21 @@ class GeminiService(BaseLLM):
         except Exception as e:
             raise InvalidAPIKeyError(f"Invalid api key: {str(e)}")
         
-    async def get_response_and_important_message(self, message):
+    async def get_response(self, message):
         """
-        Calling LLM to decide if message is important
+        Calling LLM to get response
         
         Returns:
-            Response + decision to save or not
+            Response from LLM
         """
-        prompt = f"""
-            You are a friendly chatbot assistant. Your task is to answer the user's question.
-            After providing your answer, you must evaluate whether the user's message contains important or valuable information 
-            worth storing embedding for long-term use (e.g., a request for a summary, an explanation of a concept, a significant question, 
-            or an idea that needs to be remembered).
-            Here are some guidelines to help you make the decision:
-                'is_important': true if the message has high informational value. false if it’s just small talk or trivial.\
-                    
-            Your output format must be as follows:
-            [Your answer]
-            ```json
-            {{
-                "is_important": "[true/false]"
-            }}
-            Here is the user's message:
-            {message}
-        """
+
         if not message or not message.strip():
             raise ValueError("Message can not be empty")
         
         content = [
             types.Content(
                 role='user',
-                parts=[types.Part(text=prompt)]
+                parts=[types.Part(text=message)]
             )
         ]
         try:
@@ -84,17 +71,9 @@ class GeminiService(BaseLLM):
             # server error, rate limit, ...
             raise GeminiAPIError(f"Gemini api error: {str(e)}")
     
-    async def parse_response(self, message):
-        response = await self.get_response_and_important_message(message)
-        response_parts = response.split("```json")
-        
-        llm_response = response_parts[0].strip() # answer from llm
-        # sometimes no json replied, in that case set is_important to False
-        if len(response_parts) > 1:
-            json_text = response_parts[1].strip() # json define whether important or not
-            json_text = json_text[:-3] # delete ``` at the end of text so json can load
-            data = json.loads(json_text)
-            is_important = data.get("is_important", False)
-        else:
-            is_important = False
-        return llm_response, is_important
+    async def important_response(self, message):
+        """ Get response with important task and parsing """
+        prompt = generate_important_prompt(message)
+        response = await self.get_response(prompt)
+        response_parse = parse_important_response(response)
+        return response_parse

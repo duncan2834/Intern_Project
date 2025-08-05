@@ -5,6 +5,7 @@ from fastapi_healthchecks.checks.redis import RedisCheck
 from fastapi_healthchecks.api.router import HealthcheckRouter, Probe
 
 router = APIRouter()
+
 router.include_router(chat.router, tags=["Chat"])
 """
 router.include_router(search.router, prefix="/search", tags=["Search"])
