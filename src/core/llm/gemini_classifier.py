@@ -5,6 +5,8 @@ from src.core.llm.llm_base import BaseLLM
 import os
 from src.core.llm.prompts.prompt_registry import TaskRegistry
 from src.core.llm.prompts.important_task import ImportantTask
+from src.core.llm.prompts.base_prompt import BasePrompt
+
 class InvalidAPIKeyError(Exception):
     pass
 
@@ -50,6 +52,8 @@ class GeminiService(BaseLLM):
         
         try:
             task = self.task_registry.get_task(task_name)
+            if not isinstance(task, BasePrompt):
+                raise TypeError(f"Task {task_name} is not valid")
             prompt = task.generate_prompt(message)
             config = types.GenerateContentConfig(
                 response_mime_type="application/json",

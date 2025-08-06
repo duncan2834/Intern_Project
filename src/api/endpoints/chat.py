@@ -8,7 +8,7 @@ import uuid
 router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
-async def user_chat(request: ChatRequest, client: GeminiService = Depends(get_gemini_client)):
+async def user_chat(request: ChatRequest, gemini_client: GeminiService = Depends(get_gemini_client)):
 
     # Generate IDs
     #conversation_id = request.conversation_id or f"conv_{uuid.uuid4().hex[:8]}" # take first 8 char
@@ -16,7 +16,7 @@ async def user_chat(request: ChatRequest, client: GeminiService = Depends(get_ge
     #user_message_id = f"user_msg_{uuid.uuid4().hex[:8]}"
     
     # call llm
-    assistant_response = await client.get_response(request.user_message, request.task)
+    assistant_response = await gemini_client.get_response(request.user_message, request.task)
     # save_conversation_to_db (request and response info)
     # if important -> embed user message -> 
     # return only response from system
