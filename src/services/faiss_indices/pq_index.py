@@ -1,1 +1,0 @@
-# Implementation of PQ index
