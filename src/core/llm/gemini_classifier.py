@@ -3,8 +3,8 @@ from google import genai
 from google.genai import types
 from src.core.llm.llm_base import BaseLLM
 import os
-from src.core.llm.prompts.important_task import generate_important_prompt, parse_important_response
-
+from src.core.llm.prompts.prompt_registry import TaskRegistry
+from src.core.llm.prompts.important_task import ImportantTask
 class InvalidAPIKeyError(Exception):
     pass
 
@@ -16,6 +16,10 @@ class GeminiService(BaseLLM):
         super().__init__(api_key, model)
         self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
         self.model = model
+        
+        # init task registry
+        self.task_registry = TaskRegistry()
+        
         if not self.api_key or not self.api_key.strip():
             raise InvalidAPIKeyError("Set api key in .env file of pass an valid api key")
         
@@ -33,7 +37,7 @@ class GeminiService(BaseLLM):
         except Exception as e:
             raise InvalidAPIKeyError(f"Invalid api key: {str(e)}")
         
-    async def get_response(self, message):
+    async def get_response(self, message, task_name):
         """
         Calling LLM to get response
         
@@ -44,16 +48,24 @@ class GeminiService(BaseLLM):
         if not message or not message.strip():
             raise ValueError("Message can not be empty")
         
-        content = [
+        try:
+            task = self.task_registry.get_task(task_name)
+            prompt = task.generate_prompt(message)
+            config = types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=task.output_model()
+            )
+            content = [
             types.Content(
                 role='user',
-                parts=[types.Part(text=message)]
-            )
-        ]
-        try:
+                parts=[types.Part(text=prompt)]
+                )
+            ]
+            
             response = await self.client.aio.models.generate_content(
                 model=self.model,
                 contents=content,
+                config=config
             )
             
             # check if text in response format
@@ -69,11 +81,5 @@ class GeminiService(BaseLLM):
             
         except Exception as e:
             # server error, rate limit, ...
-            raise GeminiAPIError(f"Gemini api error: {str(e)}")
+            raise GeminiAPIError(f"Error: {str(e)}")
     
-    async def important_response(self, message):
-        """ Get response with important task and parsing """
-        prompt = generate_important_prompt(message)
-        response = await self.get_response(prompt)
-        response_parse = parse_important_response(response)
-        return response_parse

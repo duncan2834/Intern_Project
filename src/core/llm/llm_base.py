@@ -31,14 +31,3 @@ class BaseLLM(ABC):
         
         pass
     
-    @abstractmethod
-    def important_response(self, message):
-        """ 
-        Call LLM with important prompt and parse
-        
-        Args: 
-            message(str): message from user
-        Returns:
-            Response from llm answering important prompt
-        """
-        pass

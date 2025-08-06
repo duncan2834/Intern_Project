@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
     user_id: str = Field(..., min_length=1, description="ID of user")
     user_message: str = Field(..., min_length=1, description="Message from user")
     conversation_id: Optional[str] = Field(None, description="ID of the conversation")
+    task: str = Field(..., min_length=1, description="Task name for each purpose of prompt")
     
 class ChatResponse(BaseModel):
     """ Response return to user """
