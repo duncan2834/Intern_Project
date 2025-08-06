@@ -1,1 +1,0 @@
-# process chat message, save message text to db, save embedding vector

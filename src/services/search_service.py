@@ -1,1 +1,0 @@
-# vector search in warm memory, if not -> search in cold memory

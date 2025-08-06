@@ -1,1 +1,0 @@
-# Implementation of ivf index

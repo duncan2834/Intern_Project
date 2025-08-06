@@ -1,1 +1,0 @@
-# Pydantic model for request/response, for validation, parse
