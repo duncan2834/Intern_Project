@@ -1,5 +1,3 @@
-# db/redis_client.py
-
 import os
 from redis.asyncio import Redis 
 from dotenv import load_dotenv

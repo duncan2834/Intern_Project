@@ -1,4 +1,3 @@
-# db/postgres_client.py
 
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
