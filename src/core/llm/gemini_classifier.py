@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 from src.core.llm.llm_base import BaseLLM
 import os
+import json
 from src.core.llm.prompts.prompt_registry import TaskRegistry
 from src.core.llm.prompts.important_task import ImportantTask
 from src.core.llm.prompts.base_prompt import BasePrompt
@@ -27,7 +28,8 @@ class GeminiService(BaseLLM):
         
         try:
             self.client = genai.Client(api_key=self.api_key)
-
+            self.chat_history = [] # [{'role': 'user', 'message': message}]
+            
         except Exception as e:
             # import error, server error
             raise GeminiAPIError(f"Failed to connect to Gemini: {str(e)}")
@@ -54,24 +56,48 @@ class GeminiService(BaseLLM):
             task = self.task_registry.get_task(task_name)
             if not isinstance(task, BasePrompt):
                 raise TypeError(f"Task {task_name} is not valid")
+            
             prompt = task.generate_prompt(message)
+            
             config = types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=task.output_model()
             )
-            content = [
-            types.Content(
-                role='user',
-                parts=[types.Part(text=prompt)]
+            content = []
+        
+            if self.chat_history:
+                for chat_content in self.chat_history[-10:]:
+                    content.append(
+                        types.Content(
+                            role=chat_content["role"],
+                            parts=[types.Part(text=chat_content["message"])]
+                        )
+                    )
+                    
+            content.append(
+                types.Content(
+                    role="user",
+                    parts=[types.Part(text=prompt)]
                 )
-            ]
-            
+            )
             response = await self.client.aio.models.generate_content(
                 model=self.model,
                 contents=content,
                 config=config
             )
-            
+            data = json.loads(response.text)
+            self.chat_history.append(
+                {
+                    "role": "user",
+                    "message": message
+                }
+            )
+            self.chat_history.append(
+                {
+                    "role": "model",
+                    "message": data["answer"]
+                }
+            )
             # check if text in response format
             if hasattr(response, "text"):
                 return response.text

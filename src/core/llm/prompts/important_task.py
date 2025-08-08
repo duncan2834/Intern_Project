@@ -12,14 +12,27 @@ class ImportantTask(BasePrompt):
         return "important"
     
     @classmethod
-    def generate_prompt(self, message):
+    def generate_prompt(self, user_message):
         prompt = f"""
-            You are a friendly chatbot assistant. Your task is to answer the user's question.
-            After providing your answer, you must evaluate whether the user's message contains important or valuable information 
-            worth storing embedding for long-term use (e.g., a request for a summary, an explanation of a concept, a significant question, 
-            or an idea that needs to be remembered).
-            Here is the user's message:
-            {message}
+        You are part of a chat system that stores all messages, but only embeds and indexes important ones for retrieval.
+
+        Your job is to:
+        1. Answer the user message, if it contains a question or statement that requires a response.
+        2. Decide whether the message is important enough to be embedded (for future semantic search).
+        3. Explain your reasoning briefly.
+
+        ### Guidelines:
+        Messages that are considered important typically include:
+        - Questions that carry specific intent or domain knowledge.
+        - Informative or detailed statements.
+        - Decisions, insights, instructions, summaries, or anything with semantic weight.
+
+        Messages that are NOT important include:
+        - Short greetings, small talk, emotional reactions.
+        - Acknowledgements, short follow-ups like “okay”, “thanks”, “yes”, “no”.
+
+        ### Message:
+        "{user_message}"
         """
         return prompt
 
